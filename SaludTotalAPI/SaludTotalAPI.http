@@ -1,0 +1,6 @@
+@SaludTotalAPI_HostAddress = http://localhost:5167
+
+GET {{SaludTotalAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
