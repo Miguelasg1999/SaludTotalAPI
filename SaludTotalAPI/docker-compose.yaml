@@ -1,0 +1,14 @@
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver2022_saludtotal
+    ports:
+      - "1434:1433"
+    environment:
+      ACCEPT_EULA: "1"
+      MSSQL_SA_PASSWORD: "Miguel12345"
+      MSSQL_PID: "Developer"
+    volumes:
+      - sqlserverdata_saludtotal:/var/opt/mssql
+volumes:
+  sqlserverdata_saludtotal:
