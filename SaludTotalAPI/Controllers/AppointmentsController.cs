@@ -1,4 +1,5 @@
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SaludTotalAPI.Enums;
@@ -43,39 +44,38 @@ namespace SaludTotalAPI.Controllers
             return Ok(appointmentDto);
         }
 
-    [HttpPatch("{appointmentId:int}/status")]
-    public async Task<IActionResult> UpdateStatus(int appointmentId, [FromBody] UpdateAppointmentDto updateAppointmentDto)
-    {
-        var appointment = await _appointmentRepository.GetById(appointmentId);
-
-        if (appointment == null)
+        [Authorize(Roles = "Doctor")]
+        [HttpPatch("{appointmentId:int}/status")]
+        public async Task<IActionResult> UpdateStatus(int appointmentId, [FromBody] UpdateAppointmentDto updateAppointmentDto)
         {
-            return NotFound();
+            var appointment = await _appointmentRepository.GetById(appointmentId);
+
+            if (appointment == null)
+            {
+                return NotFound();
+            }
+
+            appointment.Status = updateAppointmentDto.Status;
+
+            var result = await _appointmentRepository.Update(appointment);
+
+            if (!result)
+            {
+                return StatusCode(500, "Error al actualizar estado");
+            }
+
+            return NoContent();
         }
 
-        appointment.Status = updateAppointmentDto.Status;
-
-        var result = await _appointmentRepository.Update(appointment);
-
-        if (!result)
+        [HttpGet("doctor/{doctorId:int}")]
+        public async Task<IActionResult> GetByDoctor(int doctorId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
-            return StatusCode(500, "Error al actualizar estado");
-        }
+            var citas = await _appointmentRepository.GetByDoctorAndDate(doctorId, startDate, endDate);
 
-        return NoContent();
-    }
+            var citasDto = citas.Adapt<List<AppointmentDto>>();
 
-    [HttpGet("doctor/{doctorId:int}")]
-    public async Task<IActionResult> GetByDoctor(int doctorId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
-    {
-        var citas = await _appointmentRepository.GetByDoctorAndDate(doctorId, startDate, endDate);
-
-        var citasDto = citas.Adapt<List<AppointmentDto>>();
-
-        return Ok(citasDto);
-    }
-
-    
+            return Ok(citasDto);
+        }    
 
     }
 }

@@ -1,4 +1,5 @@
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SaludTotalAPI.Models;
@@ -10,6 +11,7 @@ namespace SaludTotalAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class SpecialtiesController : ControllerBase
     {
         private readonly ISpecialtyRepository _specialtyRepository;
@@ -64,6 +66,7 @@ namespace SaludTotalAPI.Controllers
             return Ok(specialtyWithDoctors);
         }
 
+        
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
