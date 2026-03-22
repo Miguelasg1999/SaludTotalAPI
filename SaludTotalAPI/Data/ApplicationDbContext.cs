@@ -21,6 +21,10 @@ public class ApplicationDbContext: IdentityDbContext<ApplicationUser>
             .HasOne(p => p.MedicalRecord)
             .WithOne(m => m.Patient)
             .HasForeignKey<MedicalRecord>(m => m.PatientId);
+
+            modelBuilder.Entity<Appointment>()
+            .Property(a => a.Status)
+            .HasConversion<string>();
     }
     public DbSet<Doctor> Doctors { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
