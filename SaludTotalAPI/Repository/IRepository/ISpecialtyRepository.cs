@@ -6,5 +6,7 @@ namespace SaludTotalAPI.Repository.IRepository;
 public interface ISpecialtyRepository: IRepository<Specialty>
 {
     Task<Specialty?> GetWithDoctors(int id);
-    bool SpecialtyExists(string name);
+    Task<bool> SpecialtyExists(string name);
+    Task<bool> SpecialtyExists(int id);
+    Task<bool> HasDoctor(int id);
 }

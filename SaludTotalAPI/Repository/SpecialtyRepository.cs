@@ -23,9 +23,19 @@ public class SpecialtyRepository : Repository<Specialty>, ISpecialtyRepository
             .FirstOrDefaultAsync(s => s.SpecialtyId == id);
     }
 
-    public bool SpecialtyExists(string name)
+    public async Task<bool> SpecialtyExists(string name)
     {
         return _db.Specialties.Any(s => s.Name.ToLower().Trim() == name.ToLower().Trim());
+    }
+
+    public async Task<bool> SpecialtyExists(int id)
+    {
+        return _db.Specialties.Any(s => s.SpecialtyId == id);
     } 
+
+    public Task<bool> HasDoctor(int id)
+    {
+        return _db.Doctors.AnyAsync(d => d.SpecialtyId == id);
+    }
 
 }

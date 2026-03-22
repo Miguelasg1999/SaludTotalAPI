@@ -74,12 +74,15 @@ namespace SaludTotalAPI.Controllers
         {
         if (createSpecialtyDto == null)
         {
+            return BadRequest();
+        }
+
+        if (!ModelState.IsValid)
+        {
             return BadRequest(ModelState);
         }
 
-
-
-        if (_specialtyRepository.SpecialtyExists(createSpecialtyDto.Name))
+        if (await _specialtyRepository.SpecialtyExists(createSpecialtyDto.Name))
         {
             ModelState.AddModelError("CustomError", "La especialidad ya existe");
             return BadRequest(ModelState);
@@ -87,56 +90,95 @@ namespace SaludTotalAPI.Controllers
 
         var specialty = createSpecialtyDto.Adapt<Specialty>();
         
-        var result = _specialtyRepository.Add(specialty);
+        var result = await _specialtyRepository.Add(specialty);
 
-        if(!await result)
+        if(!result)
         {
             ModelState.AddModelError("CustomError", $"Algo salió mal al guardar el registro {specialty.Name}");
             return StatusCode(500, ModelState);
         }
-        return CreatedAtRoute("GetById", new { id = specialty.SpecialtyId }, specialty);
+
+        var specialtyDto = specialty.Adapt<SpecialtyDto>();
+        return CreatedAtRoute("GetById", new { specialtyId = specialty.SpecialtyId }, specialtyDto);
         }
 
-        /*[HttpPut("{productId:int}", Name = "UpdateProduct")]
+        [HttpPut("{specialtyId:int}", Name = "UpdateSpecialty")]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdateProduct(int productId, [FromForm] UpdateProductDto updateProductDto)
+        public async Task<IActionResult> UpdateSpecialty(int specialtyId, [FromBody] UpdateSpecialtyDto updateSpecialtyDto)
+{
+        if (updateSpecialtyDto == null)
         {
-        if (updateProductDto == null)
+            return BadRequest();
+        }
+
+        if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
-        if (!_productRepository.ProductExists(productId))
+
+        var specialty = await _specialtyRepository.GetById(specialtyId);
+
+        if (specialty == null)
         {
-            ModelState.AddModelError("CustomError", "El producto no existe");
+            return NotFound();
+        }
+
+        if (await _specialtyRepository.SpecialtyExists(updateSpecialtyDto.Name) 
+            && specialty.Name != updateSpecialtyDto.Name)
+        {
+            ModelState.AddModelError("CustomError", "La especialidad ya existe");
             return BadRequest(ModelState);
         }
-        if (!_categoryRepository.CategoryExists(updateProductDto.CategoryId))
+
+        updateSpecialtyDto.Adapt(specialty);
+
+        var result = await _specialtyRepository.Update(specialty);
+
+        if (!result)
         {
-            ModelState.AddModelError("CustomError", $"La categoría con el {updateProductDto.CategoryId} no existe");
-            return BadRequest(ModelState);
-        }
-        var product = updateProductDto.Adapt<Product>();
-        product.ProductId = productId;
-        // Agregando imagen
-        if (updateProductDto.Image != null)
-        {
-            UploadProductImage(updateProductDto, product);
-        }
-        else
-        {
-            product.ImgUrl = "https://placehold.co/300x300";
-        }
-        if (!_productRepository.UpdateProduct(product))
-        {
-            ModelState.AddModelError("CustomError", $"Algo salió mal al actualizar el registro {product.Name}");
+            ModelState.AddModelError("CustomError", "Error al actualizar");
             return StatusCode(500, ModelState);
         }
+
         return NoContent();
-        }*/
+    }
+
+    [HttpDelete("{specialtyId:int}", Name = "DeleteSpecialty")]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteSpecialty(int specialtyId)
+    {
+      if (specialtyId == 0)
+      {
+        return BadRequest(ModelState);
+      }
+
+      var specialty = await _specialtyRepository.GetById(specialtyId);
+      if (specialty == null)
+      {
+        return NotFound($"La especialidad con el id {specialtyId} no existe");
+      }
+
+      if(await _specialtyRepository.HasDoctor(specialtyId))
+      {
+        ModelState.AddModelError("CustomError", $"No se puede eliminar la especialidad {specialty.Name} porque tiene medicos asociados");
+        return BadRequest(ModelState);
+      }
+
+      if (!await _specialtyRepository.Delete(specialty))
+      {
+        ModelState.AddModelError("CustomError", $"Algo salió mal al eliminar la especialidad {specialty.Name}");
+        return StatusCode(500, ModelState);
+      }
+      return NoContent();
+    }
+
 
 
     } //end SpecialtiesController
