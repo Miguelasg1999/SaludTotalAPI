@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SaludTotalAPI.Data;
+using SaludTotalAPI.Repository;
+using SaludTotalAPI.Repository.IRepository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +9,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
+builder.Services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
