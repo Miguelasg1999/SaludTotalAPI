@@ -1,24 +1,28 @@
 using Asp.Versioning;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SaludTotalAPI.Models;
 using SaludTotalAPI.Models.Dtos;
+using SaludTotalAPI.Repository;
 using SaludTotalAPI.Repository.IRepository;
 
 namespace SaludTotalAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
+    [Authorize(Roles = "Admin")]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     public class MedicalRecordsController : ControllerBase
     {
         private readonly IMedicalRecordRepository _medicalRecordRepository;
-        public MedicalRecordsController(IMedicalRecordRepository medicalRecordRepository)
+        private readonly IPatientRepository _patientRepository;
+        public MedicalRecordsController(IMedicalRecordRepository medicalRecordRepository, IPatientRepository patientRepository)
         {
             _medicalRecordRepository = medicalRecordRepository;
+            _patientRepository = patientRepository;
         }
 
 
@@ -50,6 +54,13 @@ namespace SaludTotalAPI.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            var existingPatient = await _patientRepository.GetById(patientId);
+
+            if(existingPatient == null)
+            {
+                    return NotFound("El paciente no existe");
             }
 
             var existingRecord = await _medicalRecordRepository.GetByPatientId(patientId);

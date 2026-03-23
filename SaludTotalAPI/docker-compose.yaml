@@ -12,3 +12,6 @@ services:
       - sqlserverdata_saludtotal:/var/opt/mssql
 volumes:
   sqlserverdata_saludtotal:
+
+#Server=localhost,1434;Database=SaludTotalDB;User Id=sa;Password=Miguel12345;TrustServerCertificate=True;
+#Server=server-salud-total.database.windows.net,1433;Initial Catalog=Salud Total DB;Persist Security Info=False;User ID=server-salud-total-web;Password=Admin123!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
