@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,8 +11,10 @@ using SaludTotalAPI.Models.Dtos;
 
 namespace SaludTotalAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
     public class UsersController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -27,16 +30,15 @@ namespace SaludTotalAPI.Controllers
         private string GenerateToken(ApplicationUser user, IList<string> roles)
         {
             var jwtKey = _config.GetValue<string>("Jwt:Key");
-
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey!)
-            );
-
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName!)
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.UserName!),
+                new Claim(ClaimTypes.Email, user.Email!)
             };
 
             foreach (var role in roles)
@@ -44,13 +46,19 @@ namespace SaludTotalAPI.Controllers
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddHours(2),
-                signingCredentials: creds
-            );
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddMinutes(15),
+                SigningCredentials = creds
+            };
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            // Crear token con handler
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            // Convertir a string para enviar al cliente
+            return tokenHandler.WriteToken(token);
         }
 
         [HttpPost("login")]
@@ -76,6 +84,7 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpPost("create-role")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> CreateRole(string roleName)
         {
             if (string.IsNullOrEmpty(roleName))
@@ -95,18 +104,30 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpPost("assign-role")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> AssignRole(string username, string roleName)
         {
             var user = await _userManager.FindByNameAsync(username);
 
             if (user == null)
+            {
                 return NotFound("Usuario no existe");
-
+            }
+        
             var roleExists = await _roleManager.RoleExistsAsync(roleName);
 
             if (!roleExists)
+            {
                 return BadRequest("Rol no existe");
+            }
 
+            var roles = await _userManager.GetRolesAsync(user);
+
+            if (roles.Contains(roleName))
+            {
+                return BadRequest($"El rol {roleName} ya está asignado");
+            }
+            
             var result = await _userManager.AddToRoleAsync(user, roleName);
 
             if (!result.Succeeded)
@@ -115,7 +136,9 @@ namespace SaludTotalAPI.Controllers
             return Ok($"Rol '{roleName}' asignado a '{username}'");
         }
 
+
         [HttpGet("user-roles/{username}")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> GetUserRoles(string username)
         {
             var user = await _userManager.FindByNameAsync(username);

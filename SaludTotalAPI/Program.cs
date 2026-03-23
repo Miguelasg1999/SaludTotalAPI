@@ -9,6 +9,10 @@ using SaludTotalAPI.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using SaludTotalAPI.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,17 +25,51 @@ builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
 
-builder.Services.AddControllers()
-.AddJsonOptions(options =>
+builder.Services.AddControllers(options =>
+{
+    options.CacheProfiles.Add(CacheProfiles.Default60, CacheProfiles.Profile60);
+})
+    .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter()
         );
     });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+var apiVersioningBuilder = builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+});
+
+apiVersioningBuilder.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
+
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "SaludTotal API",
+        Version = "v1",
+        Description = "Salud Total API para gestionar clinica"
+    });
+
+    options.SwaggerDoc("v2", new OpenApiInfo
+    {
+        Title = "SaludTotal API #2",
+        Version = "v2",
+        Description = "Salud Total API para gestionar clinica #2"
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -66,8 +104,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-    .AddJwtBearer(options =>
+}).AddJwtBearer(options =>
     {
         var key = builder.Configuration.GetValue<string>("Jwt:Key");
 
@@ -94,18 +131,43 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(PolicyNames.AllowFrontend, CorsPolicyBuilder =>
+    {
+        CorsPolicyBuilder
+            .WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+
+    var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+    app.UseSwaggerUI(options =>
+    {
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint(
+                $"/swagger/{description.GroupName}/swagger.json",
+                $"SaludTotal API {description.GroupName}"
+            );
+        }
+    });
 }
 
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();
+
+app.UseResponseCaching();
+
+app.UseCors(PolicyNames.AllowFrontend);
 
 app.UseAuthentication();
 

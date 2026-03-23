@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -8,9 +9,11 @@ using SaludTotalAPI.Repository.IRepository;
 
 namespace SaludTotalAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
     public class DoctorsController : ControllerBase
     {
         private readonly IDoctorRepository _doctorRepository;

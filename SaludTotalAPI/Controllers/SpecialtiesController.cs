@@ -1,7 +1,9 @@
+using Asp.Versioning;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SaludTotalAPI.Constants;
 using SaludTotalAPI.Models;
 using SaludTotalAPI.Models.Dtos;
 using SaludTotalAPI.Repository;
@@ -9,9 +11,11 @@ using SaludTotalAPI.Repository.IRepository;
 
 namespace SaludTotalAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin")]
+    [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
     public class SpecialtiesController : ControllerBase
     {
         private readonly ISpecialtyRepository _specialtyRepository;
@@ -21,12 +25,14 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpGet]
+        [ResponseCache(CacheProfileName = CacheProfiles.Default60)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAll()
         {
             var specialties = await _specialtyRepository.GetAll();
             var specialtiesDto = specialties.Adapt<IEnumerable<SpecialtyDto>>();
+            Console.WriteLine("Hola  duro 60 segundos");
             return Ok(specialtiesDto);
         }
 

@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,9 @@ namespace SaludTotalAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
     public class MedicalRecordsController : ControllerBase
     {
         private readonly IMedicalRecordRepository _medicalRecordRepository;

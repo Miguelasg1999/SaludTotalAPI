@@ -1,9 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "37LiwSXTJx4=",
+  "dgSpecHash": "FNAfO8w9Ybo=",
   "success": true,
   "projectFilePath": "C:\\Users\\migue\\Desktop\\SaludTotal\\SaludTotalAPI\\SaludTotalAPI.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\migue\\.nuget\\packages\\asp.versioning.abstractions\\8.1.0\\asp.versioning.abstractions.8.1.0.nupkg.sha512",
+    "C:\\Users\\migue\\.nuget\\packages\\asp.versioning.http\\8.1.1\\asp.versioning.http.8.1.1.nupkg.sha512",
+    "C:\\Users\\migue\\.nuget\\packages\\asp.versioning.mvc\\8.1.1\\asp.versioning.mvc.8.1.1.nupkg.sha512",
+    "C:\\Users\\migue\\.nuget\\packages\\asp.versioning.mvc.apiexplorer\\8.1.1\\asp.versioning.mvc.apiexplorer.8.1.1.nupkg.sha512",
     "C:\\Users\\migue\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\migue\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
     "C:\\Users\\migue\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
