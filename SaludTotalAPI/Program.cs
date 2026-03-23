@@ -16,8 +16,10 @@ using SaludTotalAPI.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(dbConnectionString));
 
 // Add services to the container.
 builder.Services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
@@ -174,5 +176,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await DataSeeder.SeedDataAsync(db);
+}
 
 app.Run();

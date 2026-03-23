@@ -254,7 +254,7 @@ namespace SaludTotalAPI.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Appointments", (string)null);
+                    b.ToTable("Appointments");
                 });
 
             modelBuilder.Entity("SaludTotalAPI.Models.Doctor", b =>
@@ -286,7 +286,7 @@ namespace SaludTotalAPI.Migrations
 
                     b.HasIndex("SpecialtyId");
 
-                    b.ToTable("Doctors", (string)null);
+                    b.ToTable("Doctors");
                 });
 
             modelBuilder.Entity("SaludTotalAPI.Models.MedicalRecord", b =>
@@ -317,7 +317,7 @@ namespace SaludTotalAPI.Migrations
                     b.HasIndex("PatientId")
                         .IsUnique();
 
-                    b.ToTable("MedicalRecords", (string)null);
+                    b.ToTable("MedicalRecords");
                 });
 
             modelBuilder.Entity("SaludTotalAPI.Models.Patient", b =>
@@ -344,7 +344,7 @@ namespace SaludTotalAPI.Migrations
 
                     b.HasKey("PatientId");
 
-                    b.ToTable("Patients", (string)null);
+                    b.ToTable("Patients");
                 });
 
             modelBuilder.Entity("SaludTotalAPI.Models.Specialty", b =>
@@ -364,7 +364,7 @@ namespace SaludTotalAPI.Migrations
 
                     b.HasKey("SpecialtyId");
 
-                    b.ToTable("Specialties", (string)null);
+                    b.ToTable("Specialties");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

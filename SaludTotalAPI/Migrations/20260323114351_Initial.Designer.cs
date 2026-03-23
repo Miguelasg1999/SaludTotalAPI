@@ -12,8 +12,8 @@ using SaludTotalAPI.Data;
 namespace SaludTotalAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260322083926_ConvertStatusToString")]
-    partial class ConvertStatusToString
+    [Migration("20260323114351_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
