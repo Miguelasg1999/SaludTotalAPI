@@ -2,9 +2,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using SaludTotalAPI.Models;
 using SaludTotalAPI.Models.Dtos;
@@ -15,10 +17,12 @@ namespace SaludTotalAPI.Controllers
     [ApiController] 
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
+    [Authorize(Roles = "Admin")]
     public class UsersController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+
         private readonly IConfiguration _config;
 
         public UsersController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration config)
@@ -27,10 +31,18 @@ namespace SaludTotalAPI.Controllers
             _roleManager = roleManager;
             _config = config;
         }
+
+        //Metodo para generar token JWT
         private string GenerateToken(ApplicationUser user, IList<string> roles)
         {
             var jwtKey = _config.GetValue<string>("Jwt:Key");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!));
+            var issuer = _config.GetValue<string>("Jwt:Issuer");
+            var audience = _config.GetValue<string>("Jwt:Audience");
+            if (string.IsNullOrEmpty(jwtKey))
+            {
+                throw new Exception("Firma JWT no configurada");
+            }
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             
@@ -49,19 +61,21 @@ namespace SaludTotalAPI.Controllers
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(15),
+                Expires = DateTime.UtcNow.AddMinutes(7),
+                Issuer = issuer,
+                Audience = audience,
                 SigningCredentials = creds
             };
 
-            // Crear token con handler
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
-            // Convertir a string para enviar al cliente
             return tokenHandler.WriteToken(token);
         }
 
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             var user = await _userManager.FindByNameAsync(loginDto.Username);
@@ -70,11 +84,15 @@ namespace SaludTotalAPI.Controllers
             {
                 return Unauthorized("Usuario no existe");
             }
-
+            
             var validPassword = await _userManager.CheckPasswordAsync(user, loginDto.Password);
 
             if (!validPassword)
+            {
                 return Unauthorized("Password incorrecta");
+            }
+
+
 
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -83,38 +101,40 @@ namespace SaludTotalAPI.Controllers
             return Ok(new { token });
         }
 
-        [HttpPost("create-role")]
+        [HttpPost("createRole")]
         [MapToApiVersion("2.0")]
-        public async Task<IActionResult> CreateRole(string roleName)
+        public async Task<IActionResult> CreateRole([FromBody] RoleDto roleDto)
         {
-            if (string.IsNullOrEmpty(roleName))
-                return BadRequest("Nombre de rol requerido");
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-            var exists = await _roleManager.RoleExistsAsync(roleName);
+            var exists = await _roleManager.RoleExistsAsync(roleDto.RoleName);
 
             if (exists)
                 return BadRequest("El rol ya existe");
 
-            var result = await _roleManager.CreateAsync(new IdentityRole(roleName));
+            var result = await _roleManager.CreateAsync(new IdentityRole(roleDto.RoleName));
 
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            return Ok($"Rol '{roleName}' creado");
+            return Ok($"Rol '{roleDto.RoleName}' creado");
         }
 
-        [HttpPost("assign-role")]
+        [HttpPost("assignRole")]
         [MapToApiVersion("2.0")]
-        public async Task<IActionResult> AssignRole(string username, string roleName)
+        public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto assignRoleDto)
         {
-            var user = await _userManager.FindByNameAsync(username);
+            var user = await _userManager.FindByNameAsync(assignRoleDto.Username);
 
             if (user == null)
             {
                 return NotFound("Usuario no existe");
             }
         
-            var roleExists = await _roleManager.RoleExistsAsync(roleName);
+            var roleExists = await _roleManager.RoleExistsAsync(assignRoleDto.RoleName);
 
             if (!roleExists)
             {
@@ -123,21 +143,21 @@ namespace SaludTotalAPI.Controllers
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            if (roles.Contains(roleName))
+            if (roles.Contains(assignRoleDto.RoleName))
             {
-                return BadRequest($"El rol {roleName} ya está asignado");
+                return BadRequest($"El rol {assignRoleDto.RoleName} ya está asignado");
             }
             
-            var result = await _userManager.AddToRoleAsync(user, roleName);
+            var result = await _userManager.AddToRoleAsync(user, assignRoleDto.RoleName);
 
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            return Ok($"Rol '{roleName}' asignado a '{username}'");
+            return Ok($"Rol '{assignRoleDto.RoleName}' asignado a '{assignRoleDto.Username}'");
         }
 
 
-        [HttpGet("user-roles/{username}")]
+        [HttpGet("userRoles/{username}")]
         [MapToApiVersion("2.0")]
         public async Task<IActionResult> GetUserRoles(string username)
         {

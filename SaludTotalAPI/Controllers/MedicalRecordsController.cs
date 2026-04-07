@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Ganss.Xss;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -12,9 +13,9 @@ namespace SaludTotalAPI.Controllers
 {
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
-    [Authorize(Roles = "Admin")]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
+    [Authorize]
     public class MedicalRecordsController : ControllerBase
     {
         private readonly IMedicalRecordRepository _medicalRecordRepository;
@@ -29,6 +30,7 @@ namespace SaludTotalAPI.Controllers
         [HttpGet("patient/{patientId:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Authorize(Roles = "Admin, Doctor, Patient")]
         public async Task<IActionResult> GetByPatient(int patientId)
         {
             var record = await _medicalRecordRepository.GetByPatientId(patientId);
@@ -49,8 +51,11 @@ namespace SaludTotalAPI.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize(Roles = "Admin, Doctor")]
         public async Task<IActionResult> Upsert(int patientId, [FromBody] UpsertMedicalRecordDto upsertMedicalRecordDto)
         {
+            var sanitizer = new HtmlSanitizer();
+            
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -67,6 +72,10 @@ namespace SaludTotalAPI.Controllers
 
             if (existingRecord == null)
             {
+                upsertMedicalRecordDto.MedicalNotes = sanitizer.Sanitize(upsertMedicalRecordDto.MedicalNotes ?? "");
+                upsertMedicalRecordDto.Allergies = sanitizer.Sanitize(upsertMedicalRecordDto.Allergies ?? "");
+                upsertMedicalRecordDto.CurrentMedications = sanitizer.Sanitize(upsertMedicalRecordDto.CurrentMedications ?? "");
+
                 var newRecord = upsertMedicalRecordDto.Adapt<MedicalRecord>();
 
                 newRecord.PatientId = patientId;
@@ -84,6 +93,10 @@ namespace SaludTotalAPI.Controllers
 
                 return Ok(recordDto);
             }
+
+            upsertMedicalRecordDto.MedicalNotes = sanitizer.Sanitize(upsertMedicalRecordDto.MedicalNotes ?? "");
+            upsertMedicalRecordDto.Allergies = sanitizer.Sanitize(upsertMedicalRecordDto.Allergies ?? "");
+            upsertMedicalRecordDto.CurrentMedications = sanitizer.Sanitize(upsertMedicalRecordDto.CurrentMedications ?? "");
 
             upsertMedicalRecordDto.Adapt(existingRecord);
 

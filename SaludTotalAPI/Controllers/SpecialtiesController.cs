@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Ganss.Xss;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -13,9 +14,9 @@ namespace SaludTotalAPI.Controllers
 {
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
+    [Authorize]
     public class SpecialtiesController : ControllerBase
     {
         private readonly ISpecialtyRepository _specialtyRepository;
@@ -28,11 +29,11 @@ namespace SaludTotalAPI.Controllers
         [ResponseCache(CacheProfileName = CacheProfiles.Default60)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             var specialties = await _specialtyRepository.GetAll();
             var specialtiesDto = specialties.Adapt<IEnumerable<SpecialtyDto>>();
-            Console.WriteLine("Hola  duro 60 segundos");
             return Ok(specialtiesDto);
         }
 
@@ -41,6 +42,7 @@ namespace SaludTotalAPI.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(int specialtyId)
         {
             var specialty = await _specialtyRepository.GetById(specialtyId);
@@ -59,6 +61,7 @@ namespace SaludTotalAPI.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [AllowAnonymous]
         public async Task<IActionResult> GetWithDoctors(int specialtyId)
         {
             var specialty = await _specialtyRepository.GetWithDoctors(specialtyId);
@@ -79,36 +82,41 @@ namespace SaludTotalAPI.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateSpecialty([FromBody] CreateSpecialtyDto createSpecialtyDto)
         {
-        if (createSpecialtyDto == null)
-        {
-            return BadRequest();
-        }
+            var sanitizer = new HtmlSanitizer();
+                
+            if (createSpecialtyDto == null)
+            {
+                return BadRequest();
+            }
 
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-        if (await _specialtyRepository.SpecialtyExists(createSpecialtyDto.Name))
-        {
-            ModelState.AddModelError("CustomError", "La especialidad ya existe");
-            return BadRequest(ModelState);
-        }
+            if (await _specialtyRepository.SpecialtyExists(createSpecialtyDto.Name))
+            {
+                ModelState.AddModelError("CustomError", "La especialidad ya existe");
+                return BadRequest(ModelState);
+            }
 
-        var specialty = createSpecialtyDto.Adapt<Specialty>();
-        
-        var result = await _specialtyRepository.Add(specialty);
+            createSpecialtyDto.Description = sanitizer.Sanitize(createSpecialtyDto.Description ?? "");
 
-        if(!result)
-        {
-            ModelState.AddModelError("CustomError", $"Algo salió mal al guardar el registro {specialty.Name}");
-            return StatusCode(500, ModelState);
-        }
+            var specialty = createSpecialtyDto.Adapt<Specialty>();
+            
+            var result = await _specialtyRepository.Add(specialty);
 
-        var specialtyDto = specialty.Adapt<SpecialtyDto>();
-        return CreatedAtRoute("GetById", new { specialtyId = specialty.SpecialtyId }, specialtyDto);
+            if(!result)
+            {
+                ModelState.AddModelError("CustomError", $"Algo salió mal al guardar el registro {specialty.Name}");
+                return StatusCode(500, ModelState);
+            }
+
+            var specialtyDto = specialty.Adapt<SpecialtyDto>();
+            return CreatedAtRoute("GetById", new { specialtyId = specialty.SpecialtyId }, specialtyDto);
         }
 
         [HttpPut("{specialtyId:int}", Name = "UpdateSpecialty")]
@@ -117,8 +125,11 @@ namespace SaludTotalAPI.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateSpecialty(int specialtyId, [FromBody] UpdateSpecialtyDto updateSpecialtyDto)
 {
+        var sanitizer = new HtmlSanitizer();
+        
         if (updateSpecialtyDto == null)
         {
             return BadRequest();
@@ -143,6 +154,7 @@ namespace SaludTotalAPI.Controllers
             return BadRequest(ModelState);
         }
 
+        updateSpecialtyDto.Description = sanitizer.Sanitize(updateSpecialtyDto.Description ?? "");
         updateSpecialtyDto.Adapt(specialty);
 
         var result = await _specialtyRepository.Update(specialty);
@@ -161,6 +173,7 @@ namespace SaludTotalAPI.Controllers
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteSpecialty(int specialtyId)
     {
       if (specialtyId == 0)

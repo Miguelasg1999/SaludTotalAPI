@@ -8,12 +8,12 @@ namespace SaludTotalAPI.Data;
 public static class DataSeeder
 {
     public static async Task SeedDataAsync(
-        ApplicationDbContext context,
+        ApplicationDbContext db,
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager)
     {
-        //await context.Database.EnsureDeletedAsync();
-        //await context.Database.MigrateAsync();
+        //await db.Database.EnsureDeletedAsync();
+        //await db.Database.MigrateAsync();
 
         var specialties = new List<Specialty>
         {
@@ -24,16 +24,16 @@ public static class DataSeeder
 
         foreach (var specialty in specialties)
         {
-            var exists = await context.Specialties
+            var exists = await db.Specialties
                 .AnyAsync(s => s.Name == specialty.Name);
 
             if (!exists)
             {
-                await context.Specialties.AddAsync(specialty);
+                await db.Specialties.AddAsync(specialty);
             }
         }
 
-        string[] roles = { "Admin", "Doctor" };
+        string[] roles = { "Admin", "Doctor", "Patient" };
 
         foreach (var role in roles)
         {
@@ -81,6 +81,6 @@ public static class DataSeeder
             }
         }
 
-        await context.SaveChangesAsync();
+        await db.SaveChangesAsync();
     }
 }

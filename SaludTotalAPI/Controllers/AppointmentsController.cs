@@ -1,8 +1,10 @@
 using Asp.Versioning;
+using Ganss.Xss;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SaludTotalAPI.Enums;
 using SaludTotalAPI.Models;
 using SaludTotalAPI.Models.Dtos;
@@ -14,7 +16,7 @@ namespace SaludTotalAPI.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class AppointmentsController : ControllerBase
     { 
 
@@ -25,11 +27,20 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin, Patient")]
         public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto createAppointmentDto)
         {
-            if (!ModelState.IsValid)
-            {   
-                return BadRequest(ModelState);
+
+            var sanitizer = new HtmlSanitizer();
+
+            if (!string.IsNullOrEmpty(createAppointmentDto.Reason))
+            {
+                createAppointmentDto.Reason = sanitizer.Sanitize(createAppointmentDto.Reason);
+            }
+
+            if (createAppointmentDto.AppointmentDateTime < DateTime.UtcNow)
+            {
+                return BadRequest("Debe ingresar una fecha y hora futura para la cita");
             }
 
             var appointment = createAppointmentDto.Adapt<Appointment>();
@@ -48,8 +59,9 @@ namespace SaludTotalAPI.Controllers
             return Ok(appointmentDto);
         }
 
-        [Authorize(Roles = "Doctor")]
+        
         [HttpPatch("{appointmentId:int}/status")]
+        [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> UpdateStatus(int appointmentId, [FromBody] UpdateAppointmentDto updateAppointmentDto)
         {
             var appointment = await _appointmentRepository.GetById(appointmentId);
@@ -72,13 +84,14 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpGet("doctor/{doctorId:int}")]
+        [Authorize(Roles = "Admin, Doctor")]
         public async Task<IActionResult> GetByDoctor(int doctorId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
-            var citas = await _appointmentRepository.GetByDoctorAndDate(doctorId, startDate, endDate);
+            var appointments = await _appointmentRepository.GetByDoctorAndDate(doctorId, startDate, endDate);
 
-            var citasDto = citas.Adapt<List<AppointmentDto>>();
+            var appointmentsDto = appointments.Adapt<List<AppointmentDto>>();
 
-            return Ok(citasDto);
+            return Ok(appointmentsDto);
         }    
 
     }

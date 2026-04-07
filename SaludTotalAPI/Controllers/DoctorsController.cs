@@ -10,10 +10,10 @@ using SaludTotalAPI.Repository.IRepository;
 namespace SaludTotalAPI.Controllers
 {
     [ApiController]
-    [Authorize(Roles = "Admin")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
+    [Authorize(Roles = "Admin")]
     public class DoctorsController : ControllerBase
     {
         private readonly IDoctorRepository _doctorRepository;
@@ -75,6 +75,7 @@ namespace SaludTotalAPI.Controllers
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [AllowAnonymous]
         public async Task<IActionResult> GetDoctors(
             [FromQuery] int? specialtyId,
             [FromQuery] int page = 1,

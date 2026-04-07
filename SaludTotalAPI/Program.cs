@@ -18,6 +18,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+if (string.IsNullOrEmpty(dbConnectionString))
+{
+    throw new Exception("Conexión a la base de datos no configurada");
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(dbConnectionString));
 
@@ -110,19 +115,23 @@ builder.Services.AddAuthentication(options =>
 }).AddJwtBearer(options =>
     {
         var key = builder.Configuration.GetValue<string>("Jwt:Key");
+        var issuer = builder.Configuration.GetValue<string>("Jwt:Issuer");
+        var audience = builder.Configuration.GetValue<string>("Jwt:Audience");
 
         if (string.IsNullOrEmpty(key))
         {
             throw new Exception("Firma JWT no configurada");
         }
 
-        options.RequireHttpsMetadata = false;
+        options.RequireHttpsMetadata = true;
         options.SaveToken = true;
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+            ValidateAudience = true,
+            ValidAudience = audience,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),

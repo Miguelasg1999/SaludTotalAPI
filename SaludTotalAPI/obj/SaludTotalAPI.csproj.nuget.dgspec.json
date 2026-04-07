@@ -52,6 +52,10 @@
               "target": "Package",
               "version": "[8.1.1, )"
             },
+            "HtmlSanitizer": {
+              "target": "Package",
+              "version": "[9.0.892, )"
+            },
             "Mapster": {
               "target": "Package",
               "version": "[7.4.0, )"

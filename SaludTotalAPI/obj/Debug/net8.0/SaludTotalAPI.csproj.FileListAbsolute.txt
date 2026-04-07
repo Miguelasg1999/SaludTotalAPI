@@ -7,12 +7,15 @@ C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\SaludTotalAPI.d
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\SaludTotalAPI.runtimeconfig.json
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\SaludTotalAPI.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\SaludTotalAPI.pdb
+C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\AngleSharp.dll
+C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\AngleSharp.Css.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Asp.Versioning.Abstractions.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Asp.Versioning.Http.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Asp.Versioning.Mvc.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Asp.Versioning.Mvc.ApiExplorer.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Azure.Core.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Azure.Identity.dll
+C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\HtmlSanitizer.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Humanizer.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Mapster.dll
 C:\Users\migue\Desktop\SaludTotal\SaludTotalAPI\bin\Debug\net8.0\Mapster.Core.dll
