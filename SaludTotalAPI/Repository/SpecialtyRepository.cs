@@ -20,6 +20,7 @@ public class SpecialtyRepository : Repository<Specialty>, ISpecialtyRepository
         return await _db.Specialties
             .AsNoTracking()
             .Include(s => s.Doctors)
+                .ThenInclude(d => d.User)
             .FirstOrDefaultAsync(s => s.SpecialtyId == id);
     }
 

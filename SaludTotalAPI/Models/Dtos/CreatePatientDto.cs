@@ -2,13 +2,12 @@ using System;
 
 namespace SaludTotalAPI.Models.Dtos;
 
-public class DoctorDto
+public class CreatePatientDto
 {
-    public int DoctorId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Rut { get; set; } = string.Empty;
+
     public string? Phone { get; set; }
-    public string? PhotoUrl { get; set; }
-    public int SpecialtyId { get; set; }
+    public DateTime Birthdate { get; set; }
 }

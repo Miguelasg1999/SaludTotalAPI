@@ -5,6 +5,7 @@ namespace SaludTotalAPI.Repository.IRepository;
 
 public interface IDoctorRepository: IRepository<Doctor>
 {
-    Task<IEnumerable<Doctor>> GetFiltered(int? specialtyId, int page, int pageSize);
-    Task<bool> EmailExists(string email);
+    Task<IEnumerable<Doctor>> GetPagedDoctors(int? specialtyId, int page, int pageSize);
+
+    Task<Doctor?> GetDoctorById(int id);
 }

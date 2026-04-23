@@ -15,9 +15,21 @@ public class DoctorRepository: Repository<Doctor> , IDoctorRepository
         _db = db;
     }
 
-    public async Task<IEnumerable<Doctor>> GetFiltered(int? specialtyId, int page, int pageSize)
+    public async Task<Doctor?> GetDoctorById(int id)
     {
-        var query = _db.Doctors.AsQueryable();
+        return await _db.Doctors
+            .Include(d => d.User)
+            .Include(d => d.Specialty)
+            .FirstOrDefaultAsync(d => d.DoctorId == id);
+    }
+
+    public async Task<IEnumerable<Doctor>> GetPagedDoctors(int? specialtyId, int page, int pageSize)
+    {
+        var query = _db.Doctors
+        .Include(d => d.User)
+        .Include(d => d.Specialty)
+        .AsNoTracking()
+        .AsQueryable();
 
         if (specialtyId.HasValue)
         {
@@ -25,14 +37,10 @@ public class DoctorRepository: Repository<Doctor> , IDoctorRepository
         }
 
         return await query
+            .OrderBy(d => d.DoctorId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
-    }
-
-    public async Task<bool> EmailExists(string email)
-    {
-        return await _db.Doctors.AnyAsync(d => d.Email == email);
     }
 
 }

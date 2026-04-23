@@ -51,7 +51,8 @@ public static class DataSeeder
             {
                 UserName = "admin",
                 Email = "admin@saludtotal.com",
-                Name = "Administrador"
+                Name = "Administrador",
+                Rut = "11111111-1"
             };
 
             var result = await userManager.CreateAsync(user, "Admin123!");
@@ -70,7 +71,8 @@ public static class DataSeeder
             {
                 UserName = "doctor",
                 Email = "doctor@saludtotal.com",
-                Name = "Doctor Demo"
+                Name = "Doctor Demo",
+                Rut = "22222222-2"
             };
 
             var result = await userManager.CreateAsync(user, "Doctor123!");
@@ -81,6 +83,5 @@ public static class DataSeeder
             }
         }
 
-        await db.SaveChangesAsync();
     }
 }

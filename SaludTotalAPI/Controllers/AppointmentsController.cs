@@ -27,7 +27,7 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin, Patient")]
+        [Authorize(Roles = "Admin,Doctor,Patient")]
         public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto createAppointmentDto)
         {
 
@@ -84,7 +84,7 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpGet("doctor/{doctorId:int}")]
-        [Authorize(Roles = "Admin, Doctor")]
+        [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> GetByDoctor(int doctorId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             var appointments = await _appointmentRepository.GetByDoctorAndDate(doctorId, startDate, endDate);

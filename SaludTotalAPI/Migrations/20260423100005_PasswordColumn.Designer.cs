@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SaludTotalAPI.Data;
 
@@ -11,9 +12,11 @@ using SaludTotalAPI.Data;
 namespace SaludTotalAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423100005_PasswordColumn")]
+    partial class PasswordColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,6 +173,9 @@ namespace SaludTotalAPI.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("DoctorId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -198,6 +204,9 @@ namespace SaludTotalAPI.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("PatientId")
+                        .HasColumnType("int");
+
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
@@ -221,6 +230,8 @@ namespace SaludTotalAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DoctorId");
+
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
 
@@ -228,6 +239,8 @@ namespace SaludTotalAPI.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.HasIndex("PatientId");
 
                     b.HasIndex("Rut")
                         .IsUnique();
@@ -293,8 +306,7 @@ namespace SaludTotalAPI.Migrations
 
                     b.HasIndex("SpecialtyId");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Doctors");
                 });
@@ -350,8 +362,7 @@ namespace SaludTotalAPI.Migrations
 
                     b.HasKey("PatientId");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Patients");
                 });
@@ -427,18 +438,33 @@ namespace SaludTotalAPI.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SaludTotalAPI.Models.ApplicationUser", b =>
+                {
+                    b.HasOne("SaludTotalAPI.Models.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId");
+
+                    b.HasOne("SaludTotalAPI.Models.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("SaludTotalAPI.Models.Appointment", b =>
                 {
                     b.HasOne("SaludTotalAPI.Models.Doctor", "Doctor")
                         .WithMany("Appointments")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("SaludTotalAPI.Models.Patient", "Patient")
                         .WithMany("Appointments")
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Doctor");
@@ -455,9 +481,9 @@ namespace SaludTotalAPI.Migrations
                         .IsRequired();
 
                     b.HasOne("SaludTotalAPI.Models.ApplicationUser", "User")
-                        .WithOne("Doctor")
-                        .HasForeignKey("SaludTotalAPI.Models.Doctor", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Specialty");
@@ -479,19 +505,12 @@ namespace SaludTotalAPI.Migrations
             modelBuilder.Entity("SaludTotalAPI.Models.Patient", b =>
                 {
                     b.HasOne("SaludTotalAPI.Models.ApplicationUser", "User")
-                        .WithOne("Patient")
-                        .HasForeignKey("SaludTotalAPI.Models.Patient", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("SaludTotalAPI.Models.ApplicationUser", b =>
-                {
-                    b.Navigation("Doctor");
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("SaludTotalAPI.Models.Doctor", b =>

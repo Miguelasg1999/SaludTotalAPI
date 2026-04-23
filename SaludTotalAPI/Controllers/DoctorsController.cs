@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SaludTotalAPI.Models;
 using SaludTotalAPI.Models.Dtos;
@@ -13,19 +14,55 @@ namespace SaludTotalAPI.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class DoctorsController : ControllerBase
     {
         private readonly IDoctorRepository _doctorRepository;
-        public DoctorsController(IDoctorRepository doctorRepository)
+        private readonly UserManager<ApplicationUser> _userManager;
+        public DoctorsController(IDoctorRepository doctorRepository, UserManager<ApplicationUser> userManager)
         {
             _doctorRepository = doctorRepository;
+            _userManager = userManager;
+        }
+
+        [HttpGet("{id}", Name = "GetDoctorById")]
+        [Authorize(Roles = "Admin,Doctor")]
+        public async Task<IActionResult> GetDoctorById(int id)
+        {
+            var doctor = await _doctorRepository.GetDoctorById(id);
+
+            if (doctor == null)
+            {
+                return NotFound();
+            }
+
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isAdmin && doctor.UserId != userId)
+            {
+                return Forbid();
+            }
+
+            var doctorDto = new DoctorDto
+            {
+                DoctorId = doctor.DoctorId,
+                Name = doctor.User.Name,
+                Email = doctor.User.Email ?? "",
+                Phone = doctor.Phone,
+                Rut = doctor.User.Rut,
+                PhotoUrl = doctor.PhotoUrl,
+                SpecialtyId = doctor.SpecialtyId
+            };
+
+            return Ok(doctorDto);
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateDoctor([FromForm] CreateDoctorDto createDoctorDto)
         {
             if (!ModelState.IsValid)
@@ -33,7 +70,31 @@ namespace SaludTotalAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            var doctor = createDoctorDto.Adapt<Doctor>();
+            var user = new ApplicationUser
+            {
+                UserName = createDoctorDto.Email,
+                Email = createDoctorDto.Email,
+                Name = createDoctorDto.Name,
+                Rut = createDoctorDto.Rut
+            };
+
+            var tempPassword = Guid.NewGuid().ToString("N").Substring(0, 10) + "Aa!";
+
+            var resultUser = await _userManager.CreateAsync(user, tempPassword);
+
+            if (!resultUser.Succeeded)
+            {
+                return BadRequest(new { message = "Error al crear el usuario", errors = resultUser.Errors.Select(e => e.Description) });
+            }
+
+            await _userManager.AddToRoleAsync(user, "Doctor");
+
+            var doctor = new Doctor
+            {
+                UserId = user.Id,
+                Phone = createDoctorDto.Phone,
+                SpecialtyId = createDoctorDto.SpecialtyId
+            };
 
             var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
 
@@ -55,43 +116,64 @@ namespace SaludTotalAPI.Controllers
                 doctor.PhotoUrl = fileName;
             }
 
-            if (await _doctorRepository.EmailExists(createDoctorDto.Email))
+
+            var resultDoctor = await _doctorRepository.Add(doctor);
+
+            if (!resultDoctor)
             {
-                ModelState.AddModelError("CustomError", "El email ya está registrado");
-                return BadRequest(ModelState);
+                return StatusCode(500, new { message = "Error al crear el médico" });
             }
 
-            var result = await _doctorRepository.Add(doctor);
-
-            if (!result)
+            var doctorDto = new DoctorDto
             {
-                return StatusCode(500, "Error al crear el médico");
-            }
+                DoctorId = doctor.DoctorId,
+                Name = user.Name,
+                Email = user.Email,
+                Rut = user.Rut,
+                Phone = doctor.Phone,
+                PhotoUrl = doctor.PhotoUrl,
+                SpecialtyId = doctor.SpecialtyId
+            };
 
-            var doctorDto = doctor.Adapt<DoctorDto>();
+            var response = new CreateDoctorResponseDto
+            {
+                Doctor = doctorDto,
+                Password = tempPassword
+            };
 
-            return Ok(doctorDto);
+            return CreatedAtRoute("GetDoctorById", new { id = doctor.DoctorId }, response);
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetDoctors(
-            [FromQuery] int? specialtyId,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+        [Authorize(Roles = "Admin,Patient,Doctor")]
+        public async Task<IActionResult> GetPagedDoctors([FromQuery] int? specialtyId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (page <= 0 || pageSize <= 0)
             {
                 return BadRequest("Los parámetros de paginación deben ser mayores a 0");
             }
 
-            var doctors = await _doctorRepository.GetFiltered(specialtyId, page, pageSize);
+            var doctors = await _doctorRepository.GetPagedDoctors(specialtyId, page, pageSize);
 
-            var doctorsDto = doctors.Adapt<List<DoctorDto>>();
+            var doctorsDto = doctors.Select(d => new DoctorDto
+            {
+                DoctorId = d.DoctorId,
+                Name = d.User.Name,
+                Email = d.User.Email ?? string.Empty,
+                Phone = d.Phone,
+                Rut = d.User.Rut,
+                PhotoUrl = d.PhotoUrl,
+                SpecialtyId = d.SpecialtyId
+            }).ToList();
 
-            return Ok(doctorsDto);
+            return Ok( new
+            {
+                Success = true,
+                Message = "Médicos obtenidos exitosamente",
+                Data = doctorsDto
+            });
         }
 
-     }
+    }
 }
