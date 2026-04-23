@@ -28,27 +28,7 @@ git clone <url-del-repositorio>
 cd SaludTotalAPI
 ```
 
-2. Configurar variables de entorno (ver sección abajo)
-
-3. Ejecutar base de datos con Docker
-
-```bash
-docker-compose up -d
-```
-
-4. Ejecutar migraciones
-
-```bash
-dotnet ef database update
-```
-
-5. Ejecutar proyecto
-
-```bash
-dotnet run
-```
-
----
+2. Configurar variables de entorno
 
 ## 🔑 Variables de entorno
 
@@ -57,9 +37,9 @@ Este proyecto utiliza variables de entorno para manejar información sensible.
 ### Variables requeridas
 
 ```bash
-Jwt__Key=tu_clave_super_secreta
-ConnectionStrings__DefaultConnection=Server=localhost,1434;Database=SaludTotalDB;User Id=sa;Password=tu_password;
-MSSQL_SA_PASSWORD=TU_PASSWORD
+Jwt__Key= tu_clave_super_secreta
+ConnectionStrings__DefaultConnection= Server=localhost,1434;Database=SaludTotalDB;User Id=sa;Password=tu_password;
+MSSQL_SA_PASSWORD= TU_PASSWORD
 ```
 
 ### 📌 Explicación
@@ -70,9 +50,12 @@ MSSQL_SA_PASSWORD=TU_PASSWORD
 
 ---
 
+3. Ejecutar base de datos con Docker
+
+```bash
 ## 🐳 Base de datos con Docker
 
-El proyecto utiliza SQL Server en Docker para facilitar la ejecución.
+El proyecto utiliza una imagen de SQL Server para crear un contenedor en Docker para facilitar la ejecución.
 
 ### docker-compose.yml
 
@@ -158,7 +141,7 @@ Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 * Rate Limiting:
 
   Se limita la cantidad de solicitudes por cliente para evitar abuso de la API.
-  Ejemplo: máximo 10 solicitudes cada 10 segundos.
+  Ejemplo: máximo 5 solicitudes cada 60 segundos.
 
   En caso de exceder el límite, la API responde con:
   HTTP 429 - Too Many Requests
