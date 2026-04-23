@@ -16,13 +16,13 @@ namespace SaludTotalAPI.Controllers
     [ApiVersion("2.0")]
     [ApiController]
     [Authorize]
-    public class PatientController : ControllerBase
+    public class PatientsController : ControllerBase
     {
         private readonly IPatientRepository _patientRepository;
 
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public PatientController(IPatientRepository patientRepository, UserManager<ApplicationUser> userManager)
+        public PatientsController(IPatientRepository patientRepository, UserManager<ApplicationUser> userManager)
         {
             _patientRepository = patientRepository;
             _userManager = userManager;
@@ -66,7 +66,7 @@ namespace SaludTotalAPI.Controllers
             return Ok(patientDto);
         }
 
-        [HttpGet("patients")]
+        [HttpGet]
         [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> GetPatients()
         {

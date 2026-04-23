@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SaludTotalAPI.Models;
@@ -15,7 +16,7 @@ using SaludTotalAPI.Repository.IRepository;
 namespace SaludTotalAPI.Controllers
 {
     [ApiController]
-    [Route("api/v{version:apiVersion}/auth")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     [Authorize]
@@ -77,6 +78,7 @@ namespace SaludTotalAPI.Controllers
 
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [EnableRateLimiting("fixed")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
@@ -104,6 +106,7 @@ namespace SaludTotalAPI.Controllers
 
         [HttpPost("registerPatient")]
         [AllowAnonymous]
+        [EnableRateLimiting("fixed")]
         public async Task<IActionResult> RegisterPatient(RegisterPatientDto registerPatientDto)
         {
             if (!ModelState.IsValid)

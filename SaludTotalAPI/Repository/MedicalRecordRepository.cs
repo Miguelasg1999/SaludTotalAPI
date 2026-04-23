@@ -19,4 +19,12 @@ public class MedicalRecordRepository : Repository<MedicalRecord>, IMedicalRecord
     {
         return await _db.MedicalRecords.FirstOrDefaultAsync(m => m.PatientId == patientId);
     }
+
+    public async Task<MedicalRecord?> GetByUserId(string userId)
+    {
+        return await _db.MedicalRecords
+            .Include(m => m.Patient)
+            .ThenInclude(p => p.User)
+            .FirstOrDefaultAsync(m => m.Patient.UserId == userId);
+    }
 }

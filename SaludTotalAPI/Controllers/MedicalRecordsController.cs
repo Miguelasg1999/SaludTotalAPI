@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Asp.Versioning;
 using Ganss.Xss;
 using Mapster;
@@ -27,6 +28,36 @@ namespace SaludTotalAPI.Controllers
         }
 
 
+        [HttpGet("me")]
+        [Authorize(Roles = "Patient")]
+        public async Task<IActionResult> GetMyMedicalRecord()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var record = await _medicalRecordRepository.GetByUserId(userId);
+
+            if (record == null)
+            {
+                return NotFound();
+            }
+
+            var medicalRecordDto = new MedicalRecordDto
+            {
+                MedicalRecordId = record.MedicalRecordId,
+                CreationDate = record.CreationDate,
+                MedicalNotes = record.MedicalNotes,
+                Allergies = record.Allergies,
+                CurrentMedications = record.CurrentMedications
+            };
+
+            return Ok(medicalRecordDto);
+        }
+
         [HttpGet("patient/{patientId:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -40,9 +71,9 @@ namespace SaludTotalAPI.Controllers
                 return NotFound("El paciente no tiene expediente");
             }
 
-            var recordDto = record.Adapt<MedicalRecordDto>();
+            var medicalRecordDto = record.Adapt<MedicalRecordDto>();
 
-            return Ok(recordDto);
+            return Ok(medicalRecordDto);
         }
 
 
@@ -89,9 +120,9 @@ namespace SaludTotalAPI.Controllers
                     return StatusCode(500, ModelState);
                 }
 
-                var recordDto = newRecord.Adapt<MedicalRecordDto>();
+                var medicalRecordDto = newRecord.Adapt<MedicalRecordDto>();
 
-                return Ok(recordDto);
+                return Ok(medicalRecordDto);
             }
 
             upsertMedicalRecordDto.MedicalNotes = sanitizer.Sanitize(upsertMedicalRecordDto.MedicalNotes ?? "");

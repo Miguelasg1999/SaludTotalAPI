@@ -15,6 +15,16 @@ public class AppointmentRepository : Repository<Appointment>, IAppointmentReposi
         _db = db;
     }
 
+    public async Task<Appointment?> GetAppointmentWithDetails(int id)
+    {
+        return await _db.Appointments
+            .Include(a => a.Patient)
+                .ThenInclude(p => p.User)
+            .Include(a => a.Doctor)
+                .ThenInclude(d => d.User)
+            .FirstOrDefaultAsync(a => a.AppointmentId == id);
+    }
+
     public async Task<IEnumerable<Appointment>> GetByDoctorAndDate(int doctorId, DateTime startDate, DateTime endDate)
     {
         if (startDate > endDate)

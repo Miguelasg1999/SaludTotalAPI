@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SaludTotalAPI.Models;
 using SaludTotalAPI.Models.Dtos;
 using SaludTotalAPI.Repository.IRepository;
@@ -63,6 +64,7 @@ namespace SaludTotalAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [Authorize(Roles = "Admin")]
+        [EnableRateLimiting("fixed")]
         public async Task<IActionResult> CreateDoctor([FromForm] CreateDoctorDto createDoctorDto)
         {
             if (!ModelState.IsValid)
