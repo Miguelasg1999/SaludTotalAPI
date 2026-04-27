@@ -152,7 +152,7 @@ Las contraseñas se generan automáticamente y se muestran en consola.
 
 ## Endpoints principales
 
-### 🔑 Autenticación
+### Autenticación
 
 * POST `/api/v1/auth/registerPatient`
 * POST `/api/v1/auth/login`
