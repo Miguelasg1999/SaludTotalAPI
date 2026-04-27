@@ -1,12 +1,12 @@
-# 🏥 SaludTotal API
+# SaludTotal API
 
-## 📌 Descripción
+## Descripción
 
 API REST desarrollada en .NET para la gestión de una clínica. Permite administrar pacientes, doctores, citas médicas y expedientes clínicos, aplicando buenas prácticas de arquitectura, seguridad y manejo de datos.
 
 ---
 
-## 🚀 Tecnologías utilizadas
+## Tecnologías utilizadas
 
 * .NET 8
 * ASP.NET Core Web API
@@ -19,7 +19,7 @@ API REST desarrollada en .NET para la gestión de una clínica. Permite administ
 
 ---
 
-## ⚙️ Configuración del proyecto
+## Configuración del proyecto
 
 1. Clonar repositorio
 
@@ -30,7 +30,7 @@ cd SaludTotalAPI
 
 2. Configurar variables de entorno
 
-## 🔑 Variables de entorno
+## Variables de entorno
 
 Este proyecto utiliza variables de entorno para manejar información sensible.
 
@@ -42,7 +42,7 @@ ConnectionStrings__DefaultConnection= Server=localhost,1434;Database=SaludTotalD
 MSSQL_SA_PASSWORD= TU_PASSWORD
 ```
 
-### 📌 Explicación
+### Explicación
 
 * `Jwt__Key` → clave para firmar los tokens JWT
 * `ConnectionStrings__DefaultConnection` → cadena de conexión a SQL Server
@@ -53,7 +53,7 @@ MSSQL_SA_PASSWORD= TU_PASSWORD
 3. Ejecutar base de datos con Docker
 
 ```bash
-## 🐳 Base de datos con Docker
+## Base de datos con Docker
 
 El proyecto utiliza una imagen de SQL Server para crear un contenedor en Docker para facilitar la ejecución.
 
@@ -79,7 +79,7 @@ volumes:
 
 ---
 
-## 🛠️ Ejecución completa
+## Ejecución completa
 
 1. Levantar base de datos
 
@@ -101,7 +101,7 @@ dotnet run
 
 ---
 
-## 🌱 Data Seeder
+## Data Seeder
 
 Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 
@@ -125,11 +125,11 @@ Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 
 * Expedientes clínicos
 
-🔐 Las contraseñas se generan automáticamente y se muestran en consola.
+Las contraseñas se generan automáticamente y se muestran en consola.
 
 ---
 
-## 🔐 Seguridad implementada
+## Seguridad implementada
 
 * Autenticación mediante JWT
 * Autorización basada en roles
@@ -150,7 +150,7 @@ Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 
 ---
 
-## 📊 Endpoints principales
+## Endpoints principales
 
 ### 🔑 Autenticación
 
@@ -160,7 +160,7 @@ Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 
 ---
 
-### 👨‍⚕️ Doctores
+### Doctores
 
 * GET `/api/v1/doctors`
 * GET `/api/v1/doctors/{id}`
@@ -168,7 +168,7 @@ Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 
 ---
 
-### 🧑‍🤝‍🧑 Pacientes
+### Pacientes
 
 * GET `/api/v1/patients`
 * GET `/api/v1/patients/me`
@@ -177,7 +177,7 @@ Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 
 ---
 
-### 📅 Citas
+### Citas
 
 * GET `/api/v1/appointments/{id}`
 * GET `/api/v1/appointments/doctor/{doctorId}`
@@ -186,7 +186,7 @@ Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 
 ---
 
-### 📄 Expediente Médico
+### Expediente Médico
 
 * GET `/api/v1/medicalrecords/me`
 * GET `/api/v1/medicalrecords/patient/{patientId}`
@@ -194,7 +194,7 @@ Al iniciar la aplicación se ejecuta automáticamente un seeder que crea:
 
 ---
 
-## 🧱 Arquitectura
+## Arquitectura
 
 El proyecto sigue una arquitectura en capas:
 
@@ -206,7 +206,7 @@ El proyecto sigue una arquitectura en capas:
 
 ---
 
-## 🧪 Buenas prácticas implementadas
+## Buenas prácticas implementadas
 
 * Separación de responsabilidades
 * Uso de DTOs
@@ -218,7 +218,7 @@ El proyecto sigue una arquitectura en capas:
 
 ---
 
-## 📌 Notas finales
+## Notas finales
 
 Este proyecto fue desarrollado como prueba técnica, enfocándose en:
 
