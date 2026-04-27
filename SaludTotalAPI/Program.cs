@@ -149,7 +149,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy(PolicyNames.AllowFrontend, CorsPolicyBuilder =>
     {
         CorsPolicyBuilder
-            .WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod();
+            .WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 

@@ -157,6 +157,16 @@ namespace SaludTotalAPI.Controllers
             }
 
             var doctors = await _doctorRepository.GetPagedDoctors(specialtyId, page, pageSize);
+            
+            if(doctors.Count() == 0)
+            {
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "No se encontraron médicos",
+                    Data = new List<DoctorDto>()
+                });
+            }
 
             var doctorsDto = doctors.Select(d => new DoctorDto
             {

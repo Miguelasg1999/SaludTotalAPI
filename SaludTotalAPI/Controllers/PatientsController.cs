@@ -22,10 +22,13 @@ namespace SaludTotalAPI.Controllers
 
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public PatientsController(IPatientRepository patientRepository, UserManager<ApplicationUser> userManager)
+        private readonly ILogger<PatientsController> _logger;
+
+        public PatientsController(IPatientRepository patientRepository, UserManager<ApplicationUser> userManager, ILogger<PatientsController> logger)
         {
             _patientRepository = patientRepository;
             _userManager = userManager;
+            _logger = logger;
         }
 
         [HttpGet("me")]
