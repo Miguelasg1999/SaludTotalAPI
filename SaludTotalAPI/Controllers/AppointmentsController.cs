@@ -26,29 +26,36 @@ namespace SaludTotalAPI.Controllers
 
         private readonly IPatientRepository _patientRepository;
 
-        public AppointmentsController(IAppointmentRepository appointmentRepository, IDoctorRepository doctorRepository, IPatientRepository patientRepository)
+        private readonly ILogger<AppointmentsController> _logger;
+
+        public AppointmentsController(IAppointmentRepository appointmentRepository, IDoctorRepository doctorRepository, IPatientRepository patientRepository, ILogger<AppointmentsController> logger)
         {
             _appointmentRepository = appointmentRepository;
             _doctorRepository = doctorRepository;
             _patientRepository = patientRepository;
+            _logger = logger;
         }
 
         [HttpGet("{id}")]
         [Authorize(Roles = "Admin,Doctor,Patient")]
         public async Task<IActionResult> GetAppointment(int id)
         {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            
             var appointment = await _appointmentRepository.GetAppointmentWithDetails(id);
+
+            _logger.LogInformation("=== Usuario {UserId} solicitando cita {AppointmentId} ===", userId, id);
 
             if (appointment == null)
             {
+                _logger.LogWarning("=== Cita con id {AppointmentId} no encontrada ===", id);
                 return NotFound();
             }
 
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized();
+                _logger.LogWarning("=== Usuario autenticado sin NameIdentifier intentando acceder a cita {AppointmentId} ===", id);
+                return Forbid();
             }
 
             if (!User.IsInRole("Admin"))
@@ -56,11 +63,13 @@ namespace SaludTotalAPI.Controllers
                 
                 if (User.IsInRole("Patient") && appointment.Patient.UserId != userId)
                 {
+                    _logger.LogWarning("=== Usuario paciente {UserId} intentando acceder a la cita {AppointmentId} de otro paciente ===", userId, id);
                     return Forbid();
                 }
 
                 if (User.IsInRole("Doctor") && appointment.Doctor.UserId != userId)
                 {
+                    _logger.LogWarning("=== Usuario doctor {UserId} intentando acceder a la cita {AppointmentId} de otro doctor ===", userId, id);
                     return Forbid();
                 }
             }
@@ -76,10 +85,23 @@ namespace SaludTotalAPI.Controllers
             return Ok(appointmentsDto);
         }
 
+        /// <summary>
+        /// Crea una nueva cita médica.
+        /// </summary>
+        /// <remarks>
+        /// Solo usuarios autorizados pueden crear citas.
+        /// </remarks>
+        /// <response code="200">Cita creada correctamente</response>
+        /// <response code="400">Datos inválidos</response>
+        /// <response code="500">Error interno</response>
         [HttpPost]
         [Authorize(Roles = "Admin,Doctor,Patient")]
         public async Task<IActionResult> CreateAppointment([FromBody] CreateAppointmentDto createAppointmentDto)
         {
+
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            _logger.LogInformation("=== Usuario {UserId} intentando crear una cita ===", userId);
 
             var sanitizer = new HtmlSanitizer();
 
@@ -92,6 +114,7 @@ namespace SaludTotalAPI.Controllers
 
             if (doctorExists == null)
             {
+                 _logger.LogWarning("=== Doctor {DoctorId} no existe ===", createAppointmentDto.DoctorId);
                 return BadRequest(new { message = $"El id del doctor especificado {createAppointmentDto.DoctorId} no existe"});
             }
 
@@ -99,17 +122,13 @@ namespace SaludTotalAPI.Controllers
 
             if (patientExists == null)
             {
+                _logger.LogWarning("=== Paciente {PatientId} no existe ===", createAppointmentDto.PatientId);
                 return BadRequest(new { message = $"El id del paciente especificado {createAppointmentDto.PatientId} no existe" });
             }
 
             if (createAppointmentDto.AppointmentDateTime < DateTime.UtcNow)
             {
-                return BadRequest("Debe ingresar una fecha y hora futura para la cita");
-            }
-
-
-            if (createAppointmentDto.AppointmentDateTime < DateTime.UtcNow)
-            {
+                _logger.LogWarning("=== Intento de crear cita en fecha pasada por usuario {UserId} ===", userId);
                 return BadRequest("Debe ingresar una fecha y hora futura para la cita");
             }
 
@@ -121,8 +140,11 @@ namespace SaludTotalAPI.Controllers
 
             if (!result)
             {
+                _logger.LogError("=== Error al crear cita por usuario {UserId} ===", userId);
                 return StatusCode(500, "Error al crear la cita");
             }
+
+            _logger.LogInformation("=== Cita creada exitosamente con ID {AppointmentId} ===", appointment.AppointmentId);
 
             var appointmentDto = appointment.Adapt<AppointmentDto>();
 
@@ -134,10 +156,13 @@ namespace SaludTotalAPI.Controllers
         [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> UpdateStatus(int appointmentId, [FromBody] UpdateAppointmentDto updateAppointmentDto)
         {
+            _logger.LogInformation("=== Actualizando estado de cita {AppointmentId} ===", appointmentId);
+            
             var appointment = await _appointmentRepository.GetById(appointmentId);
 
             if (appointment == null)
             {
+                _logger.LogWarning("=== Cita con id {AppointmentId} no encontrada para actualizar estado ===", appointmentId);
                 return NotFound();
             }
 
@@ -147,9 +172,11 @@ namespace SaludTotalAPI.Controllers
 
             if (!result)
             {
+                _logger.LogError("=== Error al actualizar estado de cita {AppointmentId} ===", appointmentId);
                 return StatusCode(500, "Error al actualizar estado");
             }
-
+        
+             _logger.LogInformation("=== Estado de cita {AppointmentId} actualizado exitosamente a {Status} ===", appointmentId, updateAppointmentDto.Status);
             return NoContent();
         }
 
@@ -157,6 +184,8 @@ namespace SaludTotalAPI.Controllers
         [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> GetByDoctor(int doctorId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
+            _logger.LogInformation("=== Consultando citas del doctor {DoctorId} entre {StartDate} y {EndDate} ===", doctorId, startDate, endDate);
+
             var appointments = await _appointmentRepository.GetByDoctorAndDate(doctorId, startDate, endDate);
 
             var appointmentsDto = appointments.Adapt<List<AppointmentDto>>();

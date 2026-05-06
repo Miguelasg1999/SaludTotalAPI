@@ -42,18 +42,13 @@ namespace SaludTotalAPI.Controllers
                 return Unauthorized();
             }
 
+            _logger.LogInformation("=== Usuario {UserId} solicitando su perfil ===", userId);
+
             var patient = await _patientRepository.GetCurrentUser(userId);
 
              if (patient == null)
              {
                 return NotFound();
-            }
-
-            var role = await _userManager.GetRolesAsync(patient.User);
-
-            if (!role.Contains("Patient"))
-            {
-                return Forbid();
             }
             
             var patientDto = new PatientDto
@@ -73,6 +68,8 @@ namespace SaludTotalAPI.Controllers
         [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> GetPatients()
         {
+            _logger.LogInformation("=== Solicitando lista de pacientes ===");
+
             var patients = await _patientRepository.GetPatients();
 
             var patientsDto = patients.Select(p => new PatientDto
@@ -89,23 +86,16 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpGet("{id}", Name = "GetPatientById")]
-        [Authorize(Roles = "Admin,Doctor,Patient")]
+        [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> GetPatientById(int id)
         {
+            _logger.LogInformation("Consultando paciente con id {PatientId}", id);
+
             var patient = await _patientRepository.GetPatientById(id);
 
             if (patient == null)
             {
                 return NotFound(); 
-            }
-
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var isAdmin = User.IsInRole("Admin");
-            var isDoctor = User.IsInRole("Doctor");
-
-            if (!isAdmin && !isDoctor && patient.UserId != userId)
-            {
-                return Forbid();
             }
 
             var patientDto = new PatientDto
@@ -122,23 +112,16 @@ namespace SaludTotalAPI.Controllers
         }
 
         [HttpGet("ByRut/{rut}", Name = "GetPatientByRut")]
-        [Authorize(Roles = "Admin,Doctor,Patient")]
+        [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> GetPatientByRut(string rut)
         {
+            _logger.LogInformation("Consultando paciente con RUT {Rut}", rut);
+            
             var patient = await _patientRepository.GetPatientByRut(rut);
 
             if (patient == null)
             {
                 return NotFound();
-            }
-
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var isAdmin = User.IsInRole("Admin");
-            var isDoctor = User.IsInRole("Doctor");
-
-            if (!isAdmin && !isDoctor && patient.UserId != userId)
-            {
-                return Forbid();
             }
 
             var patientDto = new PatientDto

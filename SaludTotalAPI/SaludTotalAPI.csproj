@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +27,7 @@
     <Folder Include="Constants\" />
     <Folder Include="Controllers\" />
     <Folder Include="Data\" />
+    <Folder Include="Middlewares\" />
     <Folder Include="Models\Dtos\" />
   </ItemGroup>
 

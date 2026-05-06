@@ -21,10 +21,14 @@ namespace SaludTotalAPI.Controllers
     {
         private readonly IMedicalRecordRepository _medicalRecordRepository;
         private readonly IPatientRepository _patientRepository;
-        public MedicalRecordsController(IMedicalRecordRepository medicalRecordRepository, IPatientRepository patientRepository)
+
+        private readonly ILogger<MedicalRecordsController> _logger;
+
+        public MedicalRecordsController(IMedicalRecordRepository medicalRecordRepository, IPatientRepository patientRepository, ILogger<MedicalRecordsController> logger)
         {
             _medicalRecordRepository = medicalRecordRepository;
             _patientRepository = patientRepository;
+            _logger = logger;
         }
 
 
@@ -36,13 +40,18 @@ namespace SaludTotalAPI.Controllers
 
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogWarning("=== Usuario no encontrado ===");
                 return Unauthorized();
             }
+
+            _logger.LogInformation("=== Usuario {UserId} solicitando su expediente médico ===", userId);
 
             var record = await _medicalRecordRepository.GetByUserId(userId);
 
             if (record == null)
             {
+                _logger.LogWarning("=== Expediente médico no encontrado para el usuario {UserId} ===", userId);
+
                 return NotFound();
             }
 
@@ -61,9 +70,11 @@ namespace SaludTotalAPI.Controllers
         [HttpGet("patient/{patientId:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [Authorize(Roles = "Admin, Doctor, Patient")]
+        [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> GetByPatient(int patientId)
         {
+            _logger.LogInformation("=== Solicitando expediente médico para el paciente {PatientId} ===", patientId);
+
             var record = await _medicalRecordRepository.GetByPatientId(patientId);
 
             if (record == null)
@@ -85,8 +96,10 @@ namespace SaludTotalAPI.Controllers
         [Authorize(Roles = "Admin, Doctor")]
         public async Task<IActionResult> Upsert(int patientId, [FromBody] UpsertMedicalRecordDto upsertMedicalRecordDto)
         {
+            _logger.LogInformation("=== Actualización o creación de expediente del paciente con id {PatientId} ===", patientId);
+
             var sanitizer = new HtmlSanitizer();
-            
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -116,8 +129,9 @@ namespace SaludTotalAPI.Controllers
 
                 if (!result)
                 {
-                    ModelState.AddModelError("CustomError", "Error al crear expediente");
-                    return StatusCode(500, ModelState);
+                    _logger.LogError("=== Error al crear expediente para el paciente {PatientId} ===", patientId);
+
+                    return StatusCode(500, "No se pudo crear el expediente médico");
                 }
 
                 var medicalRecordDto = newRecord.Adapt<MedicalRecordDto>();
@@ -135,8 +149,9 @@ namespace SaludTotalAPI.Controllers
 
             if (!updateResult)
             {
-                ModelState.AddModelError("CustomError", "Error al actualizar expediente");
-                return StatusCode(500, ModelState);
+                _logger.LogError("=== Error al actualizar expediente para el paciente {PatientId} ===", patientId);
+
+                return StatusCode(500, "No se pudo actualizar el expediente");
             }
 
             return NoContent();

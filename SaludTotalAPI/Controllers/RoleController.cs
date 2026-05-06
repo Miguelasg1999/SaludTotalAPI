@@ -19,10 +19,13 @@ namespace SaludTotalAPI.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
-        public RoleController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        private readonly ILogger<RoleController> _logger;
+
+        public RoleController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ILogger<RoleController> logger)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _logger = logger;
         }
 
         [HttpGet("{id}", Name = "GetRoleById")]
@@ -43,6 +46,7 @@ namespace SaludTotalAPI.Controllers
         [HttpPost("createRole")]
         public async Task<IActionResult> CreateRole([FromBody] RoleDto roleDto)
         {
+
             if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -67,12 +71,15 @@ namespace SaludTotalAPI.Controllers
 
             var roleResponseDto = role.Adapt<RoleResponseDto>();
 
+            _logger.LogInformation("Creando rol {RoleName}", roleDto.RoleName);
+
             return CreatedAtRoute("GetRoleById", new { id = roleResponseDto.Id }, roleResponseDto);
         }
 
         [HttpPost("assignRole")]
         public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto assignRoleDto)
         {
+
             var user = await _userManager.FindByNameAsync(assignRoleDto.Username);
 
             if (user == null)
@@ -99,6 +106,8 @@ namespace SaludTotalAPI.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
+            _logger.LogInformation("Rol '{RoleName}' asignado a usuario '{Username}'", assignRoleDto.RoleName, assignRoleDto.Username);
+            
             return Ok($"Rol '{assignRoleDto.RoleName}' asignado a '{assignRoleDto.Username}'");
         }
 

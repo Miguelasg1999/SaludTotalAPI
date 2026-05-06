@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using SaludTotalAPI.Constants;
 using SaludTotalAPI.Models;
 using SaludTotalAPI.Models.Dtos;
 using SaludTotalAPI.Repository.IRepository;
@@ -20,20 +21,27 @@ namespace SaludTotalAPI.Controllers
     {
         private readonly IDoctorRepository _doctorRepository;
         private readonly UserManager<ApplicationUser> _userManager;
-        public DoctorsController(IDoctorRepository doctorRepository, UserManager<ApplicationUser> userManager)
+
+        private readonly ILogger<DoctorsController> _logger;
+        public DoctorsController(IDoctorRepository doctorRepository, UserManager<ApplicationUser> userManager, ILogger<DoctorsController> logger)
         {
             _doctorRepository = doctorRepository;
             _userManager = userManager;
+            _logger = logger;
         }
 
         [HttpGet("{id}", Name = "GetDoctorById")]
         [Authorize(Roles = "Admin,Doctor")]
         public async Task<IActionResult> GetDoctorById(int id)
         {
+            _logger.LogInformation("=== Consultando doctor con id {DoctorId} ===", id);
+
             var doctor = await _doctorRepository.GetDoctorById(id);
 
             if (doctor == null)
             {
+                _logger.LogWarning("=== Doctor con id {DoctorId} no encontrado ===", id);
+
                 return NotFound();
             }
 
@@ -42,8 +50,12 @@ namespace SaludTotalAPI.Controllers
 
             if (!isAdmin && doctor.UserId != userId)
             {
+                _logger.LogWarning("=== Acceso denegado al doctor {DoctorId} por usuario {UserId} ===", id, userId);
+
                 return Forbid();
             }
+
+            _logger.LogInformation("=== Doctor con id {DoctorId} obtenido correctamente ===", id);
 
             var doctorDto = new DoctorDto
             {
@@ -67,6 +79,8 @@ namespace SaludTotalAPI.Controllers
         [EnableRateLimiting("fixed")]
         public async Task<IActionResult> CreateDoctor([FromForm] CreateDoctorDto createDoctorDto)
         {
+            _logger.LogInformation("=== Creando nuevo doctor con email {Email} ===", createDoctorDto.Email);
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -86,6 +100,8 @@ namespace SaludTotalAPI.Controllers
 
             if (!resultUser.Succeeded)
             {
+                _logger.LogWarning("=== Error creando usuario doctor {Email} {Errors} ===", createDoctorDto.Email, resultUser.Errors);
+                
                 return BadRequest(new { message = "Error al crear el usuario", errors = resultUser.Errors.Select(e => e.Description) });
             }
 
@@ -143,6 +159,8 @@ namespace SaludTotalAPI.Controllers
                 Password = tempPassword
             };
 
+            _logger.LogInformation("=== Doctor creado correctamente con id {DoctorId} ===", doctor.DoctorId);
+
             return CreatedAtRoute("GetDoctorById", new { id = doctor.DoctorId }, response);
         }
 
@@ -151,6 +169,8 @@ namespace SaludTotalAPI.Controllers
         [Authorize(Roles = "Admin,Patient,Doctor")]
         public async Task<IActionResult> GetPagedDoctors([FromQuery] int? specialtyId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
+            _logger.LogInformation("=== Listando doctores. SpecialtyId: {SpecialtyId}, Page: {Page}, PageSize: {PageSize} ===", specialtyId, page, pageSize);
+            
             if (page <= 0 || pageSize <= 0)
             {
                 return BadRequest("Los parámetros de paginación deben ser mayores a 0");

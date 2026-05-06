@@ -14,6 +14,8 @@ using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using SaludTotalAPI.Constants;
 using Microsoft.AspNetCore.RateLimiting;
+using SaludTotalAPI.Middlewares;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +46,7 @@ builder.Services.AddControllers(options =>
             new System.Text.Json.Serialization.JsonStringEnumConverter()
         );
     });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 var apiVersioningBuilder = builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
@@ -65,18 +67,26 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
 
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "SaludTotal API",
         Version = "v1",
-        Description = "Salud Total API para gestionar clinica"
+        Description = "API REST para la gestión de una clínica. Permite administrar pacientes, doctores, citas médicas y expedientes clínicos.",
+        Contact = new OpenApiContact
+        {
+            Name = "Miguel Sierra",
+            Email = "miguel@hotmail.com"
+        }
     });
 
     options.SwaggerDoc("v2", new OpenApiInfo
     {
         Title = "SaludTotal API #2",
         Version = "v2",
-        Description = "Salud Total API para gestionar clinica #2"
+        Description = "VERSION 2 API REST para la gestión de una clínica. Permite administrar pacientes, doctores, citas médicas y expedientes clínicos, se agrego endpoints para crear y asignar roles a los usuarios.",
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -86,9 +96,9 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Nuestra API utiliza la Autenticación JWT usando el esquema Bearer. \n\r\n\r" +
-                    "Ingresa la palabra a continuación el token generado en login.\n\r\n\r" +
-                    "Ejemplo: \"12345abcdef\""
+        Description = "Nuestra API utiliza la Autenticación JWT usando el esquema Bearer. \n\n" +
+                        "Ingresa la palabra a continuación del token generado en login.\n\n" +
+                        "Ejemplo: \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -169,7 +179,7 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
 
         await context.HttpContext.Response.WriteAsync(
-            "Demasiadas solicitudes. Intenta nuevamente en unos segundos.",
+            "Demasiadas solicitudes en un corto periodo de tiempo. Intenta nuevamente en unos segundos.",
             cancellationToken: token);
     };
 });
@@ -184,6 +194,11 @@ if (app.Environment.IsDevelopment())
 
     app.UseSwaggerUI(options =>
     {
+
+        options.RoutePrefix = string.Empty;
+
+        options.DisplayRequestDuration();
+
         foreach (var description in provider.ApiVersionDescriptions)
         {
             options.SwaggerEndpoint(
@@ -203,6 +218,8 @@ app.UseRateLimiter();
 app.UseResponseCaching();
 
 app.UseCors(PolicyNames.AllowFrontend);
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
 

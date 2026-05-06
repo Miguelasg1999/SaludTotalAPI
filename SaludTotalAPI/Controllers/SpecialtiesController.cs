@@ -21,9 +21,12 @@ namespace SaludTotalAPI.Controllers
     public class SpecialtiesController : ControllerBase
     {
         private readonly ISpecialtyRepository _specialtyRepository;
-        public SpecialtiesController(ISpecialtyRepository specialtyRepository)
+
+        private readonly ILogger<SpecialtiesController> _logger;
+        public SpecialtiesController(ISpecialtyRepository specialtyRepository, ILogger<SpecialtiesController> logger)
         {
             _specialtyRepository = specialtyRepository;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -33,8 +36,12 @@ namespace SaludTotalAPI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
+            _logger.LogInformation("Obteniendo todas las especialidades");
+
             var specialties = await _specialtyRepository.GetAll();
+
             var specialtiesDto = specialties.Adapt<IEnumerable<SpecialtyDto>>();
+
             return Ok(specialtiesDto);
         }
 
@@ -105,12 +112,9 @@ namespace SaludTotalAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateSpecialty([FromBody] CreateSpecialtyDto createSpecialtyDto)
         {
+            _logger.LogInformation("Creando especialidad {Name}", createSpecialtyDto.Name);
+
             var sanitizer = new HtmlSanitizer();
-                
-            if (createSpecialtyDto == null)
-            {
-                return BadRequest();
-            }
 
             if (!ModelState.IsValid)
             {
@@ -119,7 +123,10 @@ namespace SaludTotalAPI.Controllers
 
             if (await _specialtyRepository.SpecialtyExists(createSpecialtyDto.Name))
             {
+                _logger.LogWarning("Intento de crear especialidad duplicada {Name}", createSpecialtyDto.Name);
+
                 ModelState.AddModelError("CustomError", "La especialidad ya existe");
+
                 return BadRequest(ModelState);
             }
 
@@ -131,8 +138,9 @@ namespace SaludTotalAPI.Controllers
 
             if(!result)
             {
-                ModelState.AddModelError("CustomError", $"Algo salió mal al guardar el registro {specialty.Name}");
-                return StatusCode(500, ModelState);
+                _logger.LogError("Error al guardar la especialidad {Name}", specialty.Name);
+
+                return StatusCode(500, "Error al guardar la especialidad");
             }
 
             var specialtyDto = specialty.Adapt<SpecialtyDto>();
